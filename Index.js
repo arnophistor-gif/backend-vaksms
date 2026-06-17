@@ -1,82 +1,40 @@
 const express = require('express');
 const axios = require('axios');
-const cors = require('cors');
-
+const path = require('path');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Mengizinkan HTML Anda untuk mengakses backend ini
-app.use(cors());
 app.use(express.json());
 
-// Mengambil API Key aman dari pengaturan Render
-const API_KEY = process.env.VAK_SMS_API_KEY;
+// Masukkan API Key Vak-SMS Anda
+const API_KEY = 'MASUKKAN_API_KEY_VAK_SMS_ANDA'; 
+const BASE_URL = 'https://vak-sms.com';
 
-// 1. Jalur Ping untuk UptimeRobot (Agar server aktif 24 jam gratis)
-app.get('/ping', (req, res) => {
-    res.status(200).send('Server Aktif');
+// Endpoint untuk melayani halaman utama index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
-// 2. Jalur Cek Saldo Akun Vak-SMS Anda
-app.get('/api/saldo', async (req, res) => {
+// 1. ENDPOINT: Pesan Nomor Virtual Baru
+app.get('/api/get-number', async (req, res) => {
+    const { service, country } = req.query;
     try {
-        const response = await axios.get(`https://vak-sms.com{API_KEY}`);
+        const response = await axios.get(`${BASE_URL}/getNumber/?apiKey=${API_KEY}&service=${service}&country=${country}`);
         res.json(response.data);
     } catch (error) {
-        res.status(500).json({ error: 'Gagal mengambil data saldo' });
+        res.status(500).json({ error: 'Gagal memesan nomor virtual' });
     }
 });
 
-// 3. Jalur Ambil Nomor (Contoh parameter di HTML: ?country=id&service=wa)
-app.get('/api/ambil-nomor', async (req, res) => {
-    const { country, service } = req.query;
-    
-    if (!country || !service) {
-        return res.status(400).json({ error: 'Parameter country dan service wajib diisi' });
-    }
-
-    try {
-        const response = await axios.get(`https://vak-sms.com{API_KEY}&service=${service}&country=${country}`);
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).json({ error: 'Gagal mengambil nomor' });
-    }
-});
-
-// 4. Jalur Cek SMS / OTP yang Masuk (Butuh ID Transaksi dari langkah ambil nomor)
-app.get('/api/cek-sms', async (req, res) => {
+// 2. ENDPOINT: Cek SMS OTP yang Masuk
+app.get('/api/get-sms', async (req, res) => {
     const { idNum } = req.query;
-    
-    if (!idNum) {
-        return res.status(400).json({ error: 'Parameter idNum wajib diisi' });
-    }
-
     try {
-        const response = await axios.get(`https://vak-sms.com{API_KEY}&idNum=${idNum}`);
+        const response = await axios.get(`${BASE_URL}/getSmsCode/?apiKey=${API_KEY}&idNum=${idNum}`);
         res.json(response.data);
     } catch (error) {
         res.status(500).json({ error: 'Gagal mengecek SMS' });
     }
 });
 
-// 5. Jalur Batalkan Nomor (Jika OTP tidak kunjung masuk / hangus)
-app.get('/api/batalkan-nomor', async (req, res) => {
-    const { idNum } = req.query;
-
-    if (!idNum) {
-        return res.status(400).json({ error: 'Parameter idNum wajib diisi' });
-    }
-
-    try {
-        // Status 'end' digunakan untuk membatalkan nomor di Vak-SMS
-        const response = await axios.get(`https://vak-sms.com{API_KEY}&status=end&idNum=${idNum}`);
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).json({ error: 'Gagal membatalkan nomor' });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`Backend berjalan di port ${PORT}`);
-});
-
+// Ekspor aplikasi agar dikenali oleh Vercel
+module.exports = app;
