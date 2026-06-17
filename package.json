@@ -1,15 +1,13 @@
 {
-  "name": "backend-vaksms-reseller",
+  "name": "backend-vaksms",
   "version": "1.0.0",
-  "description": "Backend jembatan API Vak-SMS",
-  "main": "index.js",
+  "description": "Backend API OTP Vak-SMS di Vercel",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node api/index.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "cors": "^2.8.5",
     "express": "^4.18.2"
   }
 }
-
